@@ -1,7 +1,11 @@
+from collections import Counter
 import argparse
+import re
 
-VOCABULARY_SIZE = 300000
 LABMDAS_VALUES = [round(x * 0.01, 2) for x in xrange(0, 201)]
+SET_FILE_HEADER_LINE_REGEX = "<.*>"
+VOCABULARY_SIZE = 300000
+LIDSTONE_TRAINING_DEVELOPMENT_RATIO = 0.9
 
 
 class OutputManager(object):
@@ -32,10 +36,38 @@ def get_arguments():
     return parser.parse_args()
 
 
+def get_set_from_file(set_file_path):
+    a_set = []
+    with open(set_file_path, "r") as set_file_handle:
+        for line in set_file_handle:
+            if not re.match(SET_FILE_HEADER_LINE_REGEX, line):
+                a_set.extend(line.strip().split())
+    return a_set
+
+
 def main(args):
     output_file_handle = open(args.output_file_path, "w")
     output_manager = OutputManager(output_file_handle)
+    # 1.Init
     output_manager.output(args.development_set_file_path)
+    output_manager.output(args.test_set_file_path)
+    output_manager.output(args.input_word)
+    output_manager.output(args.output_file_path)
+    output_manager.output(VOCABULARY_SIZE)
+    output_manager.output(1.0 / VOCABULARY_SIZE)
+    # 2. Development set preprocessing
+    development_set = get_set_from_file(args.development_set_file_path)
+    output_manager.output(len(development_set))
+    # 3. Lidstone model training
+    lidstone_split_index = int(round(LIDSTONE_TRAINING_DEVELOPMENT_RATIO * len(development_set)))
+    training_set, validation_set = development_set[:lidstone_split_index], development_set[lidstone_split_index:]
+    output_manager.output(len(validation_set))
+    output_manager.output(len(training_set))
+    training_set_counter = Counter(training_set)
+    output_manager.output(len(training_set_counter))
+    output_manager.output(training_set_counter[args.input_word])
+
+    # Done
     output_file_handle.close()
 
 
