@@ -4,7 +4,7 @@ import re
 
 LABMDAS_VALUES = [round(x * 0.01, 2) for x in xrange(0, 201)]
 LIDSTONE_TRAINING_DEVELOPMENT_RATIO = 0.9
-SET_FILE_HEADER_LINE_REGEX = "<.*>"
+SET_FILE_HEADER_LINE_REGEX = "^<.*>$"
 VOCABULARY_SIZE = 300000
 
 
@@ -39,7 +39,7 @@ def get_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('development_set_file_path', help='The path to the development set file')
     parser.add_argument('test_set_file_path', help='The path to the test set file')
-    parser.add_argument('input_word', help='The word the analyse')
+    parser.add_argument('input_word', help='The word to analyse')
     parser.add_argument('output_file_path', help='The path to the output file')
     return parser.parse_args()
 
@@ -48,8 +48,9 @@ def get_article_set(article_set_file_path):
     article_set = []
     with open(article_set_file_path, "r") as article_set_file:
         for line in article_set_file:
+            line = line.strip()
             if not re.match(SET_FILE_HEADER_LINE_REGEX, line):
-                article_set.extend(line.strip().split())
+                article_set.extend(line.split())
     return article_set
 
 
