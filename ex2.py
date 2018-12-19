@@ -1,15 +1,13 @@
 from collections import Counter
 import argparse
-import re
 import math
-import numpy
+import re
 
-LABMDAS_VALUES = [round(x * 0.01, 2) for x in range(0, 201)]
+LABMDAS_VALUES = [round(x * 0.01, 2) for x in range(1, 201)]
 LIDSTONE_TRAINING_DEVELOPMENT_RATIO = 0.9
 SET_FILE_HEADER_LINE_REGEX = "^<.*>$"
 VOCABULARY_SIZE = 300000
-UNSEEN_WORD = "this-word-was-definitely-unseen-in-any-set"
-LAMBDA_RANGE = numpy.arange(2.00, 0.00, -0.01)
+UNSEEN_WORD = "unseen-word"
 
 
 class OutputManager(object):
@@ -75,8 +73,8 @@ def find_perplexity(_lambda, training_counter, training_set_size, validation_set
 
 def construct_lambda_dict(training_counter, training_set_size, validation_set):
     lambda_dictionary = {}
-    for _lambda in LAMBDA_RANGE:
-        lambda_dictionary[round(_lambda, 3)] = find_perplexity(_lambda, training_counter, training_set_size, validation_set)
+    for _lambda in LABMDAS_VALUES:
+        lambda_dictionary[_lambda] = find_perplexity(_lambda, training_counter, training_set_size, validation_set)
     return lambda_dictionary
 
 
@@ -126,18 +124,18 @@ def main(args):
     output_manager.output(training_set_counter[args.input_word])
 
     # Output 12
-    p_MLE = lambda word: training_set_counter[word]/float(len(training_set)) if word in training_set_counter else 0.0
-    output_manager.output(p_MLE(args.input_word))
+    p_mle = lambda word: training_set_counter[word]/float(len(training_set)) if word in training_set_counter else 0.0
+    output_manager.output(p_mle(args.input_word))
 
     # Output 13
-    output_manager.output(p_MLE(UNSEEN_WORD))
+    output_manager.output(p_mle(UNSEEN_WORD))
 
     # Output 14
-    p_Lid_10 = lidstone_model(0.10, training_set_counter, len(training_set))
-    output_manager.output(p_Lid_10(args.input_word))
+    p_lid_10 = lidstone_model(0.10, training_set_counter, len(training_set))
+    output_manager.output(p_lid_10(args.input_word))
 
     # Output 15
-    output_manager.output(p_Lid_10(UNSEEN_WORD))
+    output_manager.output(p_lid_10(UNSEEN_WORD))
 
     # Output 16
     lambda_to_perplexity = construct_lambda_dict(training_set_counter, len(training_set), validation_set)
@@ -155,6 +153,7 @@ def main(args):
 
     # Output 20
     output_manager.output(lambda_to_perplexity[best_lambda])
+
 
 if __name__ == "__main__":
     main(get_arguments(),)
