@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, defaultdict
 import argparse
 import math
 import re
@@ -78,6 +78,26 @@ def construct_lambda_dict(training_counter, training_set_size, validation_set):
     return lambda_dictionary
 
 
+def construct_nr_dict(training_counter):
+    nr_dictionary = defaultdict(list)
+    for k, v in training_counter.items():
+        nr_dictionary[v].append(k)
+    return nr_dictionary
+
+
+def heldout_model_for_r(r, train_counter, heldout_counter, heldout_set_size):
+    if not r:
+        nr = VOCABULARY_SIZE - len(train_counter)
+        tr = sum([v for k, v in heldout_counter.items() if k not in train_counter])
+    else:
+        nr = len(r)
+        tr = sum([heldout_counter[word] for word in r])
+
+    return tr/(float(nr) * float(heldout_set_size))
+
+
+
+
 def main(args):
     output_manager = OutputManager(args.output_file_path)
     # 1. Init
@@ -154,6 +174,25 @@ def main(args):
     # Output 20
     output_manager.output(lambda_to_perplexity[best_lambda])
 
+    # 4. Held Out Model Training
+
+    # Output 21
+    heldout_split_index = int(round(0.5 * len(development_set)))
+    training_set, heldout_set = development_set[:heldout_split_index], development_set[heldout_split_index:]
+    output_manager.output(len(training_set))
+
+    # Output 22
+    output_manager.output(len(heldout_set))
+
+    # Output 23
+    training_set_counter = Counter(training_set)
+    heldout_set_counter = Counter(heldout_set)
+    nr_dictionary = construct_nr_dict(training_set_counter)
+    p_heldout = lambda word: heldout_model_for_r(nr_dictionary[training_set_counter[word]], training_set_counter, heldout_set_counter, len(heldout_set))
+    output_manager.output(p_heldout(args.input_word))
+
+    # Output 24
+    output_manager.output(p_heldout(UNSEEN_WORD))
 
 if __name__ == "__main__":
     main(get_arguments(),)
